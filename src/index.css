@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #F8F9FA;
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+  }
+
+  .dark {
+    --bg: #0F1117;
+    --surface: #1A1D27;
+    --border: #2D3148;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+  }
+
+  body {
+    @apply bg-[var(--bg)] text-[var(--text-primary)] transition-colors duration-200;
+  }
+
+  * {
+    @apply border-[var(--border)];
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-sm;
+  }
+
+  .btn-primary {
+    @apply bg-brand-green hover:bg-brand-green-dark text-white font-medium px-4 py-2 rounded-lg transition-colors duration-150;
+  }
+
+  .btn-secondary {
+    @apply bg-[var(--bg)] hover:bg-[var(--border)] text-[var(--text-primary)] font-medium px-4 py-2 rounded-lg border border-[var(--border)] transition-colors duration-150;
+  }
+
+  .input {
+    @apply w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all duration-150;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-[var(--text-secondary)] mb-1;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer;
+  }
+
+  .nav-item-inactive {
+    @apply text-[var(--text-secondary)] hover:bg-[var(--bg)] hover:text-[var(--text-primary)];
+  }
+
+  .nav-item-active {
+    @apply bg-brand-green text-white;
+  }
+}
