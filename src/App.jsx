@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
 import Directory from './pages/Directory'
+import Profile from './pages/Profile'
 import Loading from './components/Loading'
 
 function ProtectedRoute({ children }) {
@@ -46,6 +47,7 @@ function AppRoutes() {
       }>
         <Route index element={<Dashboard />} />
         <Route path="directory" element={<Directory />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
