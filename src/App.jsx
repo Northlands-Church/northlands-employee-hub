@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
+import Directory from './pages/Directory'
 import Loading from './components/Loading'
 
 function ProtectedRoute({ children }) {
@@ -35,21 +36,16 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
+        <PublicRoute><Login /></PublicRoute>
       } />
       <Route path="/setup" element={
-        <SetupRoute>
-          <Setup />
-        </SetupRoute>
+        <SetupRoute><Setup /></SetupRoute>
       } />
       <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
+        <ProtectedRoute><Layout /></ProtectedRoute>
       }>
         <Route index element={<Dashboard />} />
+        <Route path="directory" element={<Directory />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
