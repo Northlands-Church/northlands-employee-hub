@@ -70,7 +70,7 @@ export default function PTO() {
   async function fetchData() {
       setLoading(true)
       console.log('fetchData running, canReview:', canReview, 'isAdmin:', isAdmin, 'profile role:', profile?.role)
-  ...
+  
     const currentYear = new Date().getFullYear()
 
     const [reqRes, balRes, settingsRes, holidaysRes] = await Promise.all([
