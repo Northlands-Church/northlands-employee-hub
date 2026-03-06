@@ -284,10 +284,10 @@ export default function PTO() {
               </p>
             )}
             <div>
-              <label className="label">Note <span className="text-[var(--text-muted)] font-normal">(optional)</span></label>
+              <label className="label">Trip name or note <span className="text-[var(--text-muted)] font-normal">(optional)</span></label>
               <textarea className="input resize-none" rows={3} value={form.requester_note}
                 onChange={e => update('requester_note', e.target.value)}
-                placeholder="Any context for your request..." />
+                placeholder="e.g. California with family, Men's retreat..." />
             </div>
             {editingRequest && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
@@ -331,7 +331,7 @@ export default function PTO() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-[var(--text-primary)]">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
                           {req.requester_note || `${formatDate(req.start_date)} — ${formatDate(req.end_date)}`}
                         </p>
                         <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
@@ -342,11 +342,15 @@ export default function PTO() {
                             Not deducted
                           </span>
                         )}
-          </div>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
-            {formatDate(req.start_date)} — {formatDate(req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
-          </p>
-        
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        {formatDate(req.start_date)} — {formatDate(req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
+                      </p>
+                      {req.reviewer_note && (
+                        <p className="text-xs text-[var(--text-secondary)] mt-1">
+                          <span className="font-medium">Note:</span> {req.reviewer_note}
+                        </p>
+                      )}
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2 flex-shrink-0">
