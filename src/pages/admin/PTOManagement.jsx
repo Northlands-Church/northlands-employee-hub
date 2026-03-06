@@ -129,7 +129,7 @@ export default function PTOManagement() {
   const pendingCount = requests.filter(r => r.status === 'pending').length
 
   return (
-    <div className="flex gap-5 items-start">
+    <div className="flex gap-5 items-start max-w-4xl">
 
       {/* Main content */}
       <div className="flex-1 min-w-0 space-y-5">
