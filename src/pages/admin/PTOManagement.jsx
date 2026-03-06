@@ -220,7 +220,7 @@ export default function PTOManagement() {
       </div>
 
       {/* Right sidebar — staff scorecard */}
-      <div className="w-64 flex-shrink-0 space-y-3">
+      <div className="w-64 flex-shrink-0 space-y-3 border-l border-[var(--border)] pl-5">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             {currentYear} Balances
