@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
         .select(`
           *,
           departments (id, name),
-          profiles (*)
+          profiles (*),
+        staff_favorites (*)
         `)
         .eq('id', userId)
         .single()
