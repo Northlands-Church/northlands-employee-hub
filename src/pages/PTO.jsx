@@ -324,50 +324,68 @@ export default function PTO() {
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {requests.map(req => {
-              const s = STATUS_STYLES[req.status] || STATUS_STYLES.pending
-              const type = PTO_TYPES.find(t => t.value === req.pto_type)
-              return (
-                <div key={req.id} className="px-5 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {req.requester_note || `${formatDate(req.start_date)} — ${formatDate(req.end_date)}`}
-                        </p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
-                          {s.label}
-                        </span>
-                        {req.deduct_from_balance === false && (
-                          <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
-                            Not deducted
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        {formatDate(req.start_date)} — {formatDate(req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
-                      </p>
-                      {req.reviewer_note && (
-                        <p className="text-xs text-[var(--text-secondary)] mt-1">
-                          <span className="font-medium">Note:</span> {req.reviewer_note}
-                        </p>
-                      )}
-                    </div>
-                    {req.status === 'pending' && (
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={() => openEdit(req)}
-                          className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(req.id)}
-                          className="text-xs px-2 py-1 rounded-lg border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                          Delete
-                        </button>
-                      </div>
+          const s = STATUS_STYLES[req.status] || STATUS_STYLES.pending
+          const type = PTO_TYPES.find(t => t.value === req.pto_type)
+        
+          const formatDateRange = (start, end) => {
+            const s = new Date(start)
+            const e = new Date(end)
+            const sameYear = s.getFullYear() === e.getFullYear()
+            const sameMonth = sameYear && s.getMonth() === e.getMonth()
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+            if (sameMonth) {
+              return `${monthNames[s.getMonth()]} ${s.getDate()} – ${e.getDate()}, ${s.getFullYear()}`
+            } else if (sameYear) {
+              return `${monthNames[s.getMonth()]} ${s.getDate()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${s.getFullYear()}`
+            } else {
+              return `${monthNames[s.getMonth()]} ${s.getDate()}, ${s.getFullYear()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`
+            }
+          }
+        
+          const isDenied = req.status === 'denied'
+        
+          return (
+            <div key={req.id} className={`px-5 py-4 ${isDenied ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
+                      {s.label}
+                    </span>
+                    {req.deduct_from_balance === false && !isDenied && (
+                      <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+                        Not deducted
+                      </span>
                     )}
                   </div>
+                  <p className="text-base font-semibold text-[var(--text-primary)] leading-snug">
+                    {req.requester_note || formatDateRange(req.start_date, req.end_date)}
+                  </p>
+                  <p className="text-sm font-medium text-[var(--text-secondary)] mt-0.5">
+                    {formatDateRange(req.start_date, req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
+                  </p>
+                  {req.reviewer_note && (
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">
+                      <span className="font-medium">Note:</span> {req.reviewer_note}
+                    </p>
+                  )}
                 </div>
-              )
-            })}
+                {req.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => openEdit(req)}
+                      className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(req.id)}
+                      className="text-xs px-2 py-1 rounded-lg border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
           </div>
         )}
       </div>
