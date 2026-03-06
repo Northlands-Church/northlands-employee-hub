@@ -457,6 +457,7 @@ export default function Profile() {
               </p>
             )}
           </div>
+        </div>
       </div>
     </div>
   )
