@@ -67,6 +67,22 @@ export default function Profile() {
   const [success, setSuccess] = useState(false)
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
+  const [favForm, setFavForm] = useState({
+  favorite_color: '',
+  favorite_lunch: '',
+  favorite_date_night_restaurant: '',
+  favorite_breakfast: '',
+  favorite_snacks: '',
+  favorite_drink: '',
+  favorite_candies: '',
+  favorite_desserts: '',
+  favorite_animal: '',
+  favorite_tv_show: '',
+  favorite_movie: '',
+  fun_facts: '',
+})
+
+const updateFav = (field, value) => setFavForm(f => ({ ...f, [field]: value }))
 
   const [form, setForm] = useState({
     full_name: '',
@@ -109,6 +125,20 @@ export default function Profile() {
         motivated_by: profile.profiles?.motivated_by || '',
         fun_fact: profile.profiles?.fun_fact || '',
       })
+      setFavForm({
+        favorite_color: profile.staff_favorites?.favorite_color || '',
+        favorite_lunch: profile.staff_favorites?.favorite_lunch || '',
+        favorite_date_night_restaurant: profile.staff_favorites?.favorite_date_night_restaurant || '',
+        favorite_breakfast: profile.staff_favorites?.favorite_breakfast || '',
+        favorite_snacks: profile.staff_favorites?.favorite_snacks || '',
+        favorite_drink: profile.staff_favorites?.favorite_drink || '',
+        favorite_candies: profile.staff_favorites?.favorite_candies || '',
+        favorite_desserts: profile.staff_favorites?.favorite_desserts || '',
+        favorite_animal: profile.staff_favorites?.favorite_animal || '',
+        favorite_tv_show: profile.staff_favorites?.favorite_tv_show || '',
+        favorite_movie: profile.staff_favorites?.favorite_movie || '',
+        fun_facts: profile.staff_favorites?.fun_facts || '',
+})
     }
   }, [profile])
 
@@ -173,6 +203,25 @@ export default function Profile() {
         fun_fact: form.fun_fact || null,
       }, { onConflict: 'user_id' })
     if (profileError) throw profileError
+
+    const { error: favError } = await supabase
+      .from('staff_favorites')
+      .upsert({
+        user_id: user.id,
+        favorite_color: favForm.favorite_color || null,
+        favorite_lunch: favForm.favorite_lunch || null,
+        favorite_date_night_restaurant: favForm.favorite_date_night_restaurant || null,
+        favorite_breakfast: favForm.favorite_breakfast || null,
+        favorite_snacks: favForm.favorite_snacks || null,
+        favorite_drink: favForm.favorite_drink || null,
+        favorite_candies: favForm.favorite_candies || null,
+        favorite_desserts: favForm.favorite_desserts || null,
+        favorite_animal: favForm.favorite_animal || null,
+        favorite_tv_show: favForm.favorite_tv_show || null,
+        favorite_movie: favForm.favorite_movie || null,
+        fun_facts: favForm.fun_facts || null,
+      }, { onConflict: 'user_id' })
+    if (favError) throw favError
 
     await refreshProfile()
     setSuccess(true)
@@ -486,6 +535,50 @@ export default function Profile() {
               </p>
             )}
           </div>
+        </div>
+      </div>
+    {/* Favorites */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Favorites</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { key: 'favorite_color', label: '🎨 Favorite color' },
+            { key: 'favorite_lunch', label: '🥗 Favorite lunch spot' },
+            { key: 'favorite_date_night_restaurant', label: '🍽️ Date night restaurant' },
+            { key: 'favorite_breakfast', label: '🍳 Favorite breakfast' },
+            { key: 'favorite_snacks', label: '🍿 Favorite snacks' },
+            { key: 'favorite_drink', label: '☕ Favorite drink' },
+            { key: 'favorite_candies', label: '🍬 Favorite candies' },
+            { key: 'favorite_desserts', label: '🍰 Favorite desserts' },
+            { key: 'favorite_animal', label: '🐾 Favorite animal' },
+            { key: 'favorite_tv_show', label: '📺 Favorite TV show' },
+            { key: 'favorite_movie', label: '🎬 Favorite movie' },
+            { key: 'fun_facts', label: '✨ Hidden talents' },
+          ].map(({ key, label }) => (
+            <div key={key}>
+              {editing ? (
+                <div>
+                  <label className="label">{label}</label>
+                  <input
+                    className="input"
+                    value={favForm[key]}
+                    onChange={e => updateFav(key, e.target.value)}
+                    placeholder="..."
+                  />
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs font-semibold text-[var(--text-muted)] mb-0.5">{label}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    {profile?.staff_favorites?.[key] || <span className="italic text-[var(--text-muted)]">Not set</span>}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
