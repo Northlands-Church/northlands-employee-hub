@@ -318,50 +318,36 @@ function ReviewRow({ requestId, ptoType, onReview }) {
   }
 
   const handleConfirm = () => {
-    onReview(requestId, action, note, deduct)
+    onReview(requestId, action, note, action === 'denied' ? false : deduct)
     setShowNote(false)
     setNote('')
     setAction(null)
   }
 
   if (showNote) {
-  return (
-    <div className="mt-2 space-y-2">
-      <input className="input text-xs" value={note}
-        onChange={e => setNote(e.target.value)}
-        placeholder={action === 'denied' ? 'Reason for denial (required)...' : 'Add a note (optional)...'}
-      />
-      {action === 'approved' && (
-        <div className="flex items-center gap-2">
-          <input type="checkbox" id={`deduct-${requestId}`} checked={deduct}
-            onChange={e => setDeduct(e.target.checked)} className="rounded" />
-          <label htmlFor={`deduct-${requestId}`} className="text-xs text-[var(--text-secondary)]">
-            Deduct from PTO balance
-          </label>
-          {ptoType === 'pastoral' && (
-            <span className="text-xs text-[var(--text-muted)] italic">(pastoral — off by default)</span>
-          )}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button
-          onClick={handleConfirm}
-          disabled={action === 'denied' && !note.trim()}
-          className={`text-xs px-3 py-1 rounded-lg font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
-          Confirm {action === 'approved' ? 'Approval' : 'Denial'}
-        </button>
-        <button onClick={() => { setShowNote(false); setAction(null) }}
-          className="text-xs px-3 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)]">
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}
-        </div>
+    return (
+      <div className="mt-2 space-y-2">
+        <input className="input text-xs" value={note}
+          onChange={e => setNote(e.target.value)}
+          placeholder={action === 'denied' ? 'Reason for denial (required)...' : 'Add a note (optional)...'}
+        />
+        {action === 'approved' && (
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id={`deduct-${requestId}`} checked={deduct}
+              onChange={e => setDeduct(e.target.checked)} className="rounded" />
+            <label htmlFor={`deduct-${requestId}`} className="text-xs text-[var(--text-secondary)]">
+              Deduct from PTO balance
+            </label>
+            {ptoType === 'pastoral' && (
+              <span className="text-xs text-[var(--text-muted)] italic">(pastoral — off by default)</span>
+            )}
+          </div>
+        )}
         <div className="flex gap-2">
-          <button onClick={handleConfirm}
-            className={`text-xs px-3 py-1 rounded-lg font-medium text-white ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
+          <button
+            onClick={handleConfirm}
+            disabled={action === 'denied' && !note.trim()}
+            className={`text-xs px-3 py-1 rounded-lg font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
             Confirm {action === 'approved' ? 'Approval' : 'Denial'}
           </button>
           <button onClick={() => { setShowNote(false); setAction(null) }}
