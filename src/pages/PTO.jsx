@@ -68,7 +68,9 @@ export default function PTO() {
   }, [user, isAdmin, isLeader])
 
   async function fetchData() {
-    setLoading(true)
+      setLoading(true)
+      console.log('fetchData running, canReview:', canReview, 'isAdmin:', isAdmin, 'profile role:', profile?.role)
+  ...
     const currentYear = new Date().getFullYear()
 
     const [reqRes, balRes, settingsRes, holidaysRes] = await Promise.all([
