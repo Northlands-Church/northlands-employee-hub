@@ -426,13 +426,13 @@ export default function Profile() {
                 {profile?.profiles?.ps_visionary != null ? (
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: 'Visionary', value: profile.profiles.ps_visionary, color: '#3DBE6C' },
-                      { label: 'Operator', value: profile.profiles.ps_operator, color: '#4BBFBF' },
-                      { label: 'Processor', value: profile.profiles.ps_processor, color: '#2DA058' },
-                      { label: 'Synergist', value: profile.profiles.ps_synergist, color: '#3AA0A0' },
-                    ].map(({ label, value, color }) => (
+                      { label: 'Visionary', value: profile.profiles.ps_visionary },
+                      { label: 'Operator', value: profile.profiles.ps_operator },
+                      { label: 'Processor', value: profile.profiles.ps_processor },
+                      { label: 'Synergist', value: profile.profiles.ps_synergist },
+                    ].map(({ label, value }) => (
                       <div key={label} className="card p-3 text-center">
-                        <p className="text-2xl font-semibold" style={{ color }}>{value}</p>
+                        <p className="text-2xl font-semibold" style={{ color: value >= 480 ? '#DC2626' : value >= 240 ? '#3DBE6C' : value >= 120 ? '#3B82F6' : '#EAB308' }}>{value}</p>
                         <p className="text-xs text-[var(--text-muted)] mt-0.5">{label}</p>
                       </div>
                     ))}
