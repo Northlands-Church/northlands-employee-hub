@@ -201,7 +201,7 @@ export default function PTOManagement() {
                         {req.requester_note && (
                           <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{req.requester_note}"</p>
                         )}
-                        {req.status === 'pending' && (
+                        {req.start_date >= today && (
                           <ReviewRow requestId={req.id} ptoType={req.pto_type} onReview={handleReview} />
                         )}
                         {req.reviewer_note && (
