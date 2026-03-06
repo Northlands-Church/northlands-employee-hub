@@ -50,6 +50,10 @@ export default function Profile() {
     strength_3: '',
     strength_4: '',
     strength_5: '',
+    ps_visionary: '',
+    ps_operator: '',
+    ps_processor: '',
+    ps_synergist: '',
     communication_preference: '',
     motivated_by: '',
     fun_fact: '',
@@ -68,6 +72,10 @@ export default function Profile() {
         strength_3: profile.profiles?.strength_3 || '',
         strength_4: profile.profiles?.strength_4 || '',
         strength_5: profile.profiles?.strength_5 || '',
+        ps_visionary: profile.profiles?.ps_visionary || '',
+        ps_operator: profile.profiles?.ps_operator || '',
+        ps_processor: profile.profiles?.ps_processor || '',
+        ps_synergist: profile.profiles?.ps_synergist || '',
         communication_preference: profile.profiles?.communication_preference || '',
         motivated_by: profile.profiles?.motivated_by || '',
         fun_fact: profile.profiles?.fun_fact || '',
@@ -127,6 +135,10 @@ export default function Profile() {
         strength_3: form.strength_3 || null,
         strength_4: form.strength_4 || null,
         strength_5: form.strength_5 || null,
+        ps_visionary: form.ps_visionary ? parseInt(form.ps_visionary) : null,
+        ps_operator: form.ps_operator ? parseInt(form.ps_operator) : null,
+        ps_processor: form.ps_processor ? parseInt(form.ps_processor) : null,
+        ps_synergist: form.ps_synergist ? parseInt(form.ps_synergist) : null,
         communication_preference: form.communication_preference || null,
         motivated_by: form.motivated_by || null,
         fun_fact: form.fun_fact || null,
@@ -156,6 +168,12 @@ export default function Profile() {
     profile?.profiles?.strength_4,
     profile?.profiles?.strength_5,
   ].filter(Boolean)
+
+  const psTotal = [form.ps_visionary, form.ps_operator, form.ps_processor, form.ps_synergist]
+    .filter(Boolean)
+    .reduce((sum, val) => sum + parseInt(val || 0), 0)
+
+  const psWarning = editing && psTotal > 0 && psTotal !== 960
 
   return (
     <div className="max-w-2xl space-y-5">
@@ -368,6 +386,64 @@ export default function Profile() {
             )}
           </div>
 
+          {/* Predictable Success */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Predictable Success</p>
+            {editing ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'ps_visionary', label: 'Visionary' },
+                    { key: 'ps_operator', label: 'Operator' },
+                    { key: 'ps_processor', label: 'Processor' },
+                    { key: 'ps_synergist', label: 'Synergist' },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="label">{label}</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        max="960"
+                        value={form[key]}
+                        onChange={e => update(key, e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className={`text-xs px-3 py-2 rounded-lg flex items-center justify-between ${
+                  psWarning
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400'
+                    : 'bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)]'
+                }`}>
+                  <span>Total: <strong>{psTotal}</strong> / 960</span>
+                  {psWarning && <span>⚠️ Should equal 960</span>}
+                </div>
+              </div>
+            ) : (
+              <div>
+                {profile?.profiles?.ps_visionary != null ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Visionary', value: profile.profiles.ps_visionary, color: '#3DBE6C' },
+                      { label: 'Operator', value: profile.profiles.ps_operator, color: '#4BBFBF' },
+                      { label: 'Processor', value: profile.profiles.ps_processor, color: '#2DA058' },
+                      { label: 'Synergist', value: profile.profiles.ps_synergist, color: '#3AA0A0' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="card p-3 text-center">
+                        <p className="text-2xl font-semibold" style={{ color }}>{value}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-sm text-[var(--text-muted)] italic">Not set</span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Fun fact */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Fun fact</p>
@@ -381,8 +457,5 @@ export default function Profile() {
               </p>
             )}
           </div>
-        </div>
-      </div>
-    </div>
   )
 }
