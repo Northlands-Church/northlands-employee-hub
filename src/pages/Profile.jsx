@@ -539,47 +539,85 @@ const updateFav = (field, value) => setFavForm(f => ({ ...f, [field]: value }))
       </div>
     {/* Favorites */}
       <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Favorites</h3>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              {profile?.full_name?.split(' ')[0]}'s Favorite Things ✨
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">The little things that make them feel known</p>
+          </div>
+          {!editing && (
+            <button onClick={() => setEditing(true)} className="text-xs text-brand-green hover:underline">
+              Edit
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { key: 'favorite_color', label: '🎨 Favorite color' },
-            { key: 'favorite_lunch', label: '🥗 Favorite lunch spot' },
-            { key: 'favorite_date_night_restaurant', label: '🍽️ Date night restaurant' },
-            { key: 'favorite_breakfast', label: '🍳 Favorite breakfast' },
-            { key: 'favorite_snacks', label: '🍿 Favorite snacks' },
-            { key: 'favorite_drink', label: '☕ Favorite drink' },
-            { key: 'favorite_candies', label: '🍬 Favorite candies' },
-            { key: 'favorite_desserts', label: '🍰 Favorite desserts' },
-            { key: 'favorite_animal', label: '🐾 Favorite animal' },
-            { key: 'favorite_tv_show', label: '📺 Favorite TV show' },
-            { key: 'favorite_movie', label: '🎬 Favorite movie' },
-            { key: 'fun_facts', label: '✨ Hidden talents' },
-          ].map(({ key, label }) => (
-            <div key={key}>
-              {editing ? (
-                <div>
-                  <label className="label">{label}</label>
-                  <input
-                    className="input"
-                    value={favForm[key]}
-                    onChange={e => updateFav(key, e.target.value)}
-                    placeholder="..."
-                  />
+        {editing ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { key: 'favorite_color', label: '🎨 Favorite color' },
+              { key: 'favorite_lunch', label: '🥗 Favorite lunch spot' },
+              { key: 'favorite_date_night_restaurant', label: '🍽️ Date night restaurant' },
+              { key: 'favorite_breakfast', label: '🍳 Favorite breakfast' },
+              { key: 'favorite_snacks', label: '🍿 Favorite snacks' },
+              { key: 'favorite_drink', label: '☕ Favorite drink' },
+              { key: 'favorite_candies', label: '🍬 Favorite candies' },
+              { key: 'favorite_desserts', label: '🍰 Favorite desserts' },
+              { key: 'favorite_animal', label: '🐾 Favorite animal' },
+              { key: 'favorite_tv_show', label: '📺 Favorite TV show' },
+              { key: 'favorite_movie', label: '🎬 Favorite movie' },
+              { key: 'fun_facts', label: '✨ Hidden talents' },
+            ].map(({ key, label }) => (
+              <div key={key}>
+                <label className="label">{label}</label>
+                <input
+                  className="input"
+                  value={favForm[key]}
+                  onChange={e => updateFav(key, e.target.value)}
+                  placeholder="..."
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { key: 'favorite_color', emoji: '🎨', label: 'Favorite color' },
+              { key: 'favorite_lunch', emoji: '🥗', label: 'Lunch spot' },
+              { key: 'favorite_date_night_restaurant', emoji: '🍽️', label: 'Date night' },
+              { key: 'favorite_breakfast', emoji: '🍳', label: 'Breakfast' },
+              { key: 'favorite_snacks', emoji: '🍿', label: 'Snacks' },
+              { key: 'favorite_drink', emoji: '☕', label: 'Drink' },
+              { key: 'favorite_candies', emoji: '🍬', label: 'Candies' },
+              { key: 'favorite_desserts', emoji: '🍰', label: 'Desserts' },
+              { key: 'favorite_animal', emoji: '🐾', label: 'Animal' },
+              { key: 'favorite_tv_show', emoji: '📺', label: 'TV show' },
+              { key: 'favorite_movie', emoji: '🎬', label: 'Movie' },
+              { key: 'fun_facts', emoji: '✨', label: 'Hidden talent' },
+            ].map(({ key, emoji, label }) => {
+              const value = profile?.staff_favorites?.[key]
+              if (!value) return null
+              return (
+                <div key={key} className="flex items-start gap-3 bg-[var(--bg)] rounded-xl p-3">
+                  <span className="text-xl flex-shrink-0">{emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-[var(--text-muted)] font-medium">{label}</p>
+                    <p className="text-sm text-[var(--text-primary)] font-medium leading-snug">{value}</p>
+                  </div>
                 </div>
-              ) : (
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-muted)] mb-0.5">{label}</p>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {profile?.staff_favorites?.[key] || <span className="italic text-[var(--text-muted)]">Not set</span>}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+              )
+            })}
+            {!Object.values(profile?.staff_favorites || {}).some(v => v && typeof v === 'string' && v.length > 0) && (
+              <div className="col-span-2 text-center py-6">
+                <p className="text-sm text-[var(--text-muted)] italic">No favorites added yet.</p>
+                <button onClick={() => setEditing(true)} className="text-xs text-brand-green hover:underline mt-1">
+                  Add your favorites
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
