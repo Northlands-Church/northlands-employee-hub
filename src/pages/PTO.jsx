@@ -196,7 +196,7 @@ export default function PTO() {
       .from('pto_requests')
       .delete()
       .eq('id', requestId)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
 
     if (!error) {
       setSuccess('Request deleted.')
@@ -370,9 +370,9 @@ export default function PTO() {
                     </p>
                   )}
                 </div>
-                {req.status === 'pending' && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => openEdit(req)}
+                {(req.status === 'pending' || req.status === 'approved') && req.start_date >= today && (
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button onClick={() => openEdit(req)}
                       className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                       Edit
                     </button>
