@@ -8,6 +8,7 @@ import Setup from './pages/Setup'
 import Directory from './pages/Directory'
 import Profile from './pages/Profile'
 import PTO from './pages/PTO'
+import PTOManagement from './pages/admin/PTOManagement'
 import Loading from './components/Loading'
 
 function ProtectedRoute({ children }) {
@@ -15,6 +16,15 @@ function ProtectedRoute({ children }) {
   if (loading) return <Loading />
   if (!user) return <Navigate to="/login" replace />
   if (user && !profile) return <Navigate to="/setup" replace />
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { user, profile, loading, isAdmin, isLeader } = useAuth()
+  if (loading) return <Loading />
+  if (!user) return <Navigate to="/login" replace />
+  if (!profile) return <Navigate to="/setup" replace />
+  if (!isAdmin && !isLeader) return <Navigate to="/" replace />
   return children
 }
 
@@ -50,6 +60,9 @@ function AppRoutes() {
         <Route path="directory" element={<Directory />} />
         <Route path="profile" element={<Profile />} />
         <Route path="pto" element={<PTO />} />
+        <Route path="admin/pto" element={
+          <AdminRoute><PTOManagement /></AdminRoute>
+        } />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
