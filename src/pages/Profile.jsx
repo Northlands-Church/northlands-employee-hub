@@ -2,15 +2,44 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
-const STRENGTHS = [
-  'Achiever', 'Activator', 'Adaptability', 'Analytical', 'Arranger',
-  'Belief', 'Command', 'Communication', 'Competition', 'Connectedness',
-  'Consistency', 'Context', 'Deliberative', 'Developer', 'Discipline',
-  'Empathy', 'Focus', 'Futuristic', 'Harmony', 'Ideation',
-  'Includer', 'Individualization', 'Input', 'Intellection', 'Learner',
-  'Maximizer', 'Positivity', 'Relator', 'Responsibility', 'Restorative',
-  'Self-Assurance', 'Significance', 'Strategic', 'Woo'
-]
+const STRENGTH_QUADRANTS = {
+  Analytical: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Context: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Futuristic: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Ideation: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Input: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Intellection: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Learner: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Strategic: { quadrant: 'Strategic Thinking', color: '#10B981' },
+  Activator: { quadrant: 'Influencing', color: '#F97316' },
+  Command: { quadrant: 'Influencing', color: '#F97316' },
+  Communication: { quadrant: 'Influencing', color: '#F97316' },
+  Competition: { quadrant: 'Influencing', color: '#F97316' },
+  Maximizer: { quadrant: 'Influencing', color: '#F97316' },
+  'Self-Assurance': { quadrant: 'Influencing', color: '#F97316' },
+  Significance: { quadrant: 'Influencing', color: '#F97316' },
+  Woo: { quadrant: 'Influencing', color: '#F97316' },
+  Adaptability: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Connectedness: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Developer: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Empathy: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Harmony: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Includer: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Individualization: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Positivity: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Relator: { quadrant: 'Relationship Building', color: '#3B82F6' },
+  Achiever: { quadrant: 'Executing', color: '#8B5CF6' },
+  Arranger: { quadrant: 'Executing', color: '#8B5CF6' },
+  Belief: { quadrant: 'Executing', color: '#8B5CF6' },
+  Consistency: { quadrant: 'Executing', color: '#8B5CF6' },
+  Deliberative: { quadrant: 'Executing', color: '#8B5CF6' },
+  Discipline: { quadrant: 'Executing', color: '#8B5CF6' },
+  Focus: { quadrant: 'Executing', color: '#8B5CF6' },
+  Responsibility: { quadrant: 'Executing', color: '#8B5CF6' },
+  Restorative: { quadrant: 'Executing', color: '#8B5CF6' },
+}
+
+const STRENGTHS = Object.keys(STRENGTH_QUADRANTS)
 
 const ENNEAGRAM_TYPES = [
   { value: '1', label: '1 — The Reformer' },
@@ -343,7 +372,7 @@ export default function Profile() {
                 {strengths.length > 0
                   ? strengths.map((s, i) => (
                     <span key={i} className="text-xs px-3 py-1 rounded-full font-medium text-white"
-                      style={{ background: 'linear-gradient(135deg, #3DBE6C, #4BBFBF)' }}>
+                      style={{ backgroundColor: STRENGTH_QUADRANTS[s]?.color || '#6B7280' }}>
                       {i + 1}. {s}
                     </span>
                   ))
