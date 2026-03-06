@@ -7,8 +7,9 @@ import { useTheme } from '../context/ThemeContext'
 const STEPS = [
   { number: 1, title: 'Welcome' },
   { number: 2, title: 'Your Info' },
-  { number: 3, title: 'About You' },
-  { number: 4, title: 'All Done' },
+  { number: 3, title: 'Frameworks' },
+  { number: 4, title: 'Favorites' },
+  { number: 5, title: 'All Done' },
 ]
 
 const STRENGTHS = [
@@ -62,8 +63,19 @@ export default function Setup() {
     strength_4: '',
     strength_5: '',
     communication_preference: '',
-    motivated_by: '',
     fun_fact: '',
+    favorite_color: '',
+    favorite_lunch: '',
+    favorite_date_night_restaurant: '',
+    favorite_breakfast: '',
+    favorite_snacks: '',
+    favorite_drink: '',
+    favorite_candies: '',
+    favorite_desserts: '',
+    favorite_animal: '',
+    favorite_tv_show: '',
+    favorite_movie: '',
+    fun_facts: '',
   })
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -97,10 +109,7 @@ export default function Setup() {
 
       const { error: userError } = await supabase
         .from('users')
-        .update({
-          full_name: form.full_name,
-          avatar_url,
-        })
+        .update({ full_name: form.full_name, avatar_url })
         .eq('id', user.id)
       if (userError) throw userError
 
@@ -108,8 +117,8 @@ export default function Setup() {
         .from('profiles')
         .insert({
           user_id: user.id,
-          title: form.title,
-          bio: form.bio,
+          title: form.title || null,
+          bio: form.bio || null,
           enneagram_type: form.enneagram_type || null,
           enneagram_wing: form.enneagram_wing || null,
           strength_1: form.strength_1 || null,
@@ -118,13 +127,31 @@ export default function Setup() {
           strength_4: form.strength_4 || null,
           strength_5: form.strength_5 || null,
           communication_preference: form.communication_preference || null,
-          motivated_by: form.motivated_by || null,
           fun_fact: form.fun_fact || null,
         })
       if (profileError) throw profileError
 
+      const { error: favError } = await supabase
+        .from('staff_favorites')
+        .insert({
+          user_id: user.id,
+          favorite_color: form.favorite_color || null,
+          favorite_lunch: form.favorite_lunch || null,
+          favorite_date_night_restaurant: form.favorite_date_night_restaurant || null,
+          favorite_breakfast: form.favorite_breakfast || null,
+          favorite_snacks: form.favorite_snacks || null,
+          favorite_drink: form.favorite_drink || null,
+          favorite_candies: form.favorite_candies || null,
+          favorite_desserts: form.favorite_desserts || null,
+          favorite_animal: form.favorite_animal || null,
+          favorite_tv_show: form.favorite_tv_show || null,
+          favorite_movie: form.favorite_movie || null,
+          fun_facts: form.fun_facts || null,
+        })
+      if (favError) throw favError
+
       await refreshProfile()
-      setStep(4)
+      setStep(5)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -149,8 +176,7 @@ export default function Setup() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-lg">
 
-          {/* Step indicator */}
-          {step < 4 && <StepIndicator steps={STEPS} current={step} />}
+          {step < 5 && <StepIndicator steps={STEPS} current={step} />}
 
           {/* STEP 1 — Welcome */}
           {step === 1 && (
@@ -174,7 +200,6 @@ export default function Setup() {
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Your basic info</h2>
               <p className="text-sm text-[var(--text-muted)] mb-6">This is how you'll appear across the app.</p>
 
-              {/* Avatar */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-[var(--border)] flex items-center justify-center flex-shrink-0">
                   {avatarPreview ? (
@@ -195,66 +220,46 @@ export default function Setup() {
               <div className="space-y-4">
                 <div>
                   <label className="label">Full name *</label>
-                  <input
-                    className="input"
-                    value={form.full_name}
-                    onChange={e => update('full_name', e.target.value)}
-                    placeholder="Jane Smith"
-                  />
+                  <input className="input" value={form.full_name}
+                    onChange={e => update('full_name', e.target.value)} placeholder="Jane Smith" />
                 </div>
                 <div>
                   <label className="label">Job title</label>
-                  <input
-                    className="input"
-                    value={form.title}
-                    onChange={e => update('title', e.target.value)}
-                    placeholder="Worship Director"
-                  />
+                  <input className="input" value={form.title}
+                    onChange={e => update('title', e.target.value)} placeholder="Worship Director" />
                 </div>
                 <div>
                   <label className="label">Short bio</label>
-                  <textarea
-                    className="input resize-none"
-                    rows={3}
-                    value={form.bio}
+                  <textarea className="input resize-none" rows={3} value={form.bio}
                     onChange={e => update('bio', e.target.value)}
-                    placeholder="A little about yourself..."
-                  />
+                    placeholder="A little about yourself..." />
                 </div>
               </div>
 
               <div className="flex justify-between mt-6">
                 <button onClick={() => setStep(1)} className="btn-secondary">Back</button>
-                <button
-                  onClick={() => setStep(3)}
-                  disabled={!form.full_name}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={() => setStep(3)} disabled={!form.full_name}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                   Continue
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 3 — About You */}
+          {/* STEP 3 — Frameworks */}
           {step === 3 && (
             <div className="card p-8">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1">About you</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Personality & strengths</h2>
               <p className="text-sm text-[var(--text-muted)] mb-6">
                 These help your team understand how you work best. All optional.
               </p>
 
               <div className="space-y-5">
-
-                {/* Enneagram */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label">Enneagram type</label>
-                    <select
-                      className="input"
-                      value={form.enneagram_type}
-                      onChange={e => { update('enneagram_type', e.target.value); update('enneagram_wing', '') }}
-                    >
+                    <select className="input" value={form.enneagram_type}
+                      onChange={e => { update('enneagram_type', e.target.value); update('enneagram_wing', '') }}>
                       <option value="">Select type</option>
                       {ENNEAGRAM_TYPES.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -263,12 +268,9 @@ export default function Setup() {
                   </div>
                   <div>
                     <label className="label">Wing</label>
-                    <select
-                      className="input"
-                      value={form.enneagram_wing}
+                    <select className="input" value={form.enneagram_wing}
                       onChange={e => update('enneagram_wing', e.target.value)}
-                      disabled={!form.enneagram_type}
-                    >
+                      disabled={!form.enneagram_type}>
                       <option value="">Select wing</option>
                       {form.enneagram_type && WINGS[form.enneagram_type].map(w => (
                         <option key={w} value={w}>{w}</option>
@@ -277,17 +279,12 @@ export default function Setup() {
                   </div>
                 </div>
 
-                {/* StrengthsFinder */}
                 <div>
                   <label className="label">Top 5 StrengthsFinder (in order)</label>
                   <div className="space-y-2">
                     {[1, 2, 3, 4, 5].map(n => (
-                      <select
-                        key={n}
-                        className="input"
-                        value={form[`strength_${n}`]}
-                        onChange={e => update(`strength_${n}`, e.target.value)}
-                      >
+                      <select key={n} className="input" value={form[`strength_${n}`]}
+                        onChange={e => update(`strength_${n}`, e.target.value)}>
                         <option value="">Strength {n}</option>
                         {STRENGTHS.filter(s =>
                           s === form[`strength_${n}`] ||
@@ -300,14 +297,10 @@ export default function Setup() {
                   </div>
                 </div>
 
-                {/* Communication */}
                 <div>
                   <label className="label">I communicate best by</label>
-                  <select
-                    className="input"
-                    value={form.communication_preference}
-                    onChange={e => update('communication_preference', e.target.value)}
-                  >
+                  <select className="input" value={form.communication_preference}
+                    onChange={e => update('communication_preference', e.target.value)}>
                     <option value="">Select preference</option>
                     <option value="In person">In person</option>
                     <option value="Slack">Slack</option>
@@ -317,27 +310,51 @@ export default function Setup() {
                   </select>
                 </div>
 
-                {/* Motivated by */}
-                <div>
-                  <label className="label">I'm most motivated by</label>
-                  <input
-                    className="input"
-                    value={form.motivated_by}
-                    onChange={e => update('motivated_by', e.target.value)}
-                    placeholder="e.g. Seeing people grow, creative challenges..."
-                  />
-                </div>
-
-                {/* Fun fact */}
                 <div>
                   <label className="label">Fun fact about me</label>
-                  <input
-                    className="input"
-                    value={form.fun_fact}
+                  <input className="input" value={form.fun_fact}
                     onChange={e => update('fun_fact', e.target.value)}
-                    placeholder="e.g. I've visited 30 countries..."
-                  />
+                    placeholder="e.g. I've visited 30 countries..." />
                 </div>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <button onClick={() => setStep(2)} className="btn-secondary">Back</button>
+                <button onClick={() => setStep(4)} className="btn-primary">Continue</button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4 — Favorites */}
+          {step === 4 && (
+            <div className="card p-8">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Your favorites 🎉</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-6">
+                Help your teammates celebrate and appreciate you. All optional.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  { key: 'favorite_color', label: 'Favorite color', placeholder: 'e.g. Blue' },
+                  { key: 'favorite_lunch', label: 'Favorite lunch spot', placeholder: 'e.g. Chick-fil-A' },
+                  { key: 'favorite_date_night_restaurant', label: 'Favorite date night restaurant', placeholder: 'e.g. The Capital Grille' },
+                  { key: 'favorite_breakfast', label: 'Favorite breakfast', placeholder: 'e.g. Avocado toast' },
+                  { key: 'favorite_snacks', label: 'Favorite snacks', placeholder: 'e.g. White cheddar popcorn' },
+                  { key: 'favorite_drink', label: 'Favorite drink', placeholder: 'e.g. Starbucks flat white' },
+                  { key: 'favorite_candies', label: 'Favorite candies', placeholder: 'e.g. Reese\'s' },
+                  { key: 'favorite_desserts', label: 'Favorite desserts', placeholder: 'e.g. Cheesecake' },
+                  { key: 'favorite_animal', label: 'Favorite animal', placeholder: 'e.g. Golden retriever' },
+                  { key: 'favorite_tv_show', label: 'Favorite TV show', placeholder: 'e.g. The Office' },
+                  { key: 'favorite_movie', label: 'Favorite movie', placeholder: 'e.g. Braveheart' },
+                  { key: 'fun_facts', label: 'Hidden talents or fun facts', placeholder: 'e.g. I can solve a Rubik\'s cube in under a minute' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="label">{label}</label>
+                    <input className="input" value={form[key]}
+                      onChange={e => update(key, e.target.value)}
+                      placeholder={placeholder} />
+                  </div>
+                ))}
               </div>
 
               {error && (
@@ -347,20 +364,17 @@ export default function Setup() {
               )}
 
               <div className="flex justify-between mt-6">
-                <button onClick={() => setStep(2)} className="btn-secondary">Back</button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={() => setStep(3)} className="btn-secondary">Back</button>
+                <button onClick={handleSubmit} disabled={loading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                   {loading ? 'Saving...' : 'Finish setup'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 4 — Done */}
-          {step === 4 && (
+          {/* STEP 5 — Done */}
+          {step === 5 && (
             <div className="card p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-brand-green-light flex items-center justify-center mx-auto mb-4">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3DBE6C" strokeWidth="2.5">
@@ -385,7 +399,7 @@ export default function Setup() {
 function StepIndicator({ steps, current }) {
   return (
     <div className="flex items-center justify-center mb-6">
-      {steps.filter(s => s.number < 4).map((step, i) => (
+      {steps.filter(s => s.number < 5).map((step, i) => (
         <div key={step.number} className="flex items-center">
           <div className="flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
@@ -403,8 +417,8 @@ function StepIndicator({ steps, current }) {
             </div>
             <span className="text-xs text-[var(--text-muted)] mt-1">{step.title}</span>
           </div>
-          {i < steps.filter(s => s.number < 4).length - 1 && (
-            <div className={`w-16 h-0.5 mx-2 mb-4 transition-colors ${
+          {i < steps.filter(s => s.number < 5).length - 1 && (
+            <div className={`w-12 h-0.5 mx-2 mb-4 transition-colors ${
               current > step.number ? 'bg-brand-green' : 'bg-[var(--border)]'
             }`} />
           )}
