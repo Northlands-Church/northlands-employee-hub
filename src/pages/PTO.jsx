@@ -117,11 +117,11 @@ export default function PTO() {
   const totalDays = balance?.total_days || 0
 
   const usedDays = requests
-    .filter(r => r.status === 'approved' && r.end_date < today)
+    .filter(r => r.status === 'approved' && r.end_date < today && r.deduct_from_balance !== false)
     .reduce((sum, r) => sum + (r.days_requested || 0), 0)
 
   const pendingDays = requests
-    .filter(r => (r.status === 'approved' || r.status === 'pending') && r.end_date >= today)
+    .filter(r => (r.status === 'approved' || r.status === 'pending') && r.end_date >= today && r.deduct_from_balance !== false)
     .reduce((sum, r) => sum + (r.days_requested || 0), 0)
 
   const remainingDays = totalDays - usedDays - pendingDays
@@ -165,7 +165,7 @@ export default function PTO() {
     setSubmitting(false)
   }
 
-  async function handleReview(requestId, status, note = '') {
+  async function handleReview(requestId, status, note = '', deduct = true) {
     const { error } = await supabase
       .from('pto_requests')
       .update({
@@ -173,9 +173,10 @@ export default function PTO() {
         reviewer_note: note || null,
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
+        deduct_from_balance: deduct,
       })
       .eq('id', requestId)
-
+  
     if (!error) fetchData()
   }
 
@@ -377,7 +378,7 @@ export default function PTO() {
                           <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{req.requester_note}"</p>
                         )}
                         {req.status === 'pending' && (
-                          <ReviewRow requestId={req.id} onReview={handleReview} />
+                          <ReviewRow requestId={req.id} ptoType={req.pto_type} onReview={handleReview} />
                         )}
                         {req.reviewer_note && (
                           <p className="text-xs text-[var(--text-secondary)] mt-1">
@@ -397,10 +398,11 @@ export default function PTO() {
   )
 }
 
-function ReviewRow({ requestId, onReview }) {
+function ReviewRow({ requestId, ptoType, onReview }) {
   const [note, setNote] = useState('')
   const [showNote, setShowNote] = useState(false)
   const [action, setAction] = useState(null)
+  const [deduct, setDeduct] = useState(ptoType !== 'pastoral')
 
   const handleAction = (status) => {
     setAction(status)
@@ -408,7 +410,7 @@ function ReviewRow({ requestId, onReview }) {
   }
 
   const handleConfirm = () => {
-    onReview(requestId, action, note)
+    onReview(requestId, action, note, deduct)
     setShowNote(false)
     setNote('')
     setAction(null)
@@ -420,6 +422,21 @@ function ReviewRow({ requestId, onReview }) {
         <input className="input text-xs" value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="Add a note (optional)..." />
+        <div className="flex items-center gap-2 mb-1">
+          <input
+            type="checkbox"
+            id={`deduct-${requestId}`}
+            checked={deduct}
+            onChange={e => setDeduct(e.target.checked)}
+            className="rounded"
+          />
+          <label htmlFor={`deduct-${requestId}`} className="text-xs text-[var(--text-secondary)]">
+            Deduct from PTO balance
+          </label>
+          {ptoType === 'pastoral' && (
+            <span className="text-xs text-[var(--text-muted)] italic">(pastoral — off by default)</span>
+          )}
+        </div>
         <div className="flex gap-2">
           <button onClick={handleConfirm}
             className={`text-xs px-3 py-1 rounded-lg font-medium text-white ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
