@@ -64,8 +64,8 @@ export default function PTO() {
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   useEffect(() => {
-    fetchData()
-  }, [])
+      if (user) fetchData()
+  }, [user, isAdmin, isLeader])
 
   async function fetchData() {
     setLoading(true)
