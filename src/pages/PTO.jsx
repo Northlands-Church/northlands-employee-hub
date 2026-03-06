@@ -332,7 +332,7 @@ export default function PTO() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-[var(--text-primary)]">
-                          {formatDate(req.start_date)} — {formatDate(req.end_date)}
+                          {req.requester_note || `${formatDate(req.start_date)} — ${formatDate(req.end_date)}`}
                         </p>
                         <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
                           {s.label}
@@ -342,18 +342,11 @@ export default function PTO() {
                             Not deducted
                           </span>
                         )}
-                      </div>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
-                      </p>
-                      {req.requester_note && (
-                        <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{req.requester_note}"</p>
-                      )}
-                      {req.reviewer_note && (
-                        <p className="text-xs text-[var(--text-secondary)] mt-1">
-                          <span className="font-medium">Note:</span> {req.reviewer_note}
-                        </p>
-                      )}
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            {formatDate(req.start_date)} — {formatDate(req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
+          </p>
+        
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2 flex-shrink-0">
