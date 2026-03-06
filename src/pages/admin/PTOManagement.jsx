@@ -49,6 +49,7 @@ export default function PTOManagement() {
   const [filter, setFilter] = useState('pending')
   const [editingBalance, setEditingBalance] = useState(null)
   const [balanceInput, setBalanceInput] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const currentYear = new Date().getFullYear()
   const today = new Date().toISOString().split('T')[0]
 
@@ -80,37 +81,52 @@ export default function PTOManagement() {
   }
 
   async function handleReview(requestId, status, note = '', deduct = true) {
+    const updateData = {
+      status,
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      deduct_from_balance: status === 'denied' ? false : deduct,
+    }
+
+    if (status === 'pending') {
+      updateData.reviewer_note = null
+      updateData.reviewed_by = null
+      updateData.reviewed_at = null
+      updateData.deduct_from_balance = true
+    } else {
+      updateData.reviewer_note = note || null
+    }
+
     const { error } = await supabase
       .from('pto_requests')
-      .update({
-        status,
-        reviewer_note: note || null,
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        deduct_from_balance: deduct,
-      })
+      .update(updateData)
       .eq('id', requestId)
+
     if (!error) fetchAll()
+  }
+
+  async function handleDelete(requestId) {
+    const { error } = await supabase
+      .from('pto_requests')
+      .delete()
+      .eq('id', requestId)
+    if (!error) {
+      setConfirmDelete(null)
+      fetchAll()
+    }
   }
 
   async function handleSaveBalance(userId) {
     const days = parseFloat(balanceInput)
     if (isNaN(days) || days < 0) return
-
     await supabase
       .from('pto_balances')
-      .upsert({
-        user_id: userId,
-        year: currentYear,
-        total_days: days,
-      }, { onConflict: 'user_id,year' })
-
+      .upsert({ user_id: userId, year: currentYear, total_days: days }, { onConflict: 'user_id,year' })
     setEditingBalance(null)
     setBalanceInput('')
     fetchAll()
   }
 
-  // Build staff scorecard data
   const staffScorecard = staff.map(s => {
     const balance = balances.find(b => b.user_id === s.id)
     const userRequests = requests.filter(r => r.user_id === s.id)
@@ -134,7 +150,6 @@ export default function PTOManagement() {
       {/* Main content */}
       <div className="flex-1 min-w-0 space-y-5">
 
-        {/* Header */}
         <div>
           <h2 className="text-2xl font-semibold text-[var(--text-primary)]">PTO Management</h2>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">
@@ -179,6 +194,7 @@ export default function PTOManagement() {
               {filtered.map(req => {
                 const s = STATUS_STYLES[req.status] || STATUS_STYLES.pending
                 const type = PTO_TYPES.find(t => t.value === req.pto_type)
+                const isFuture = req.start_date >= today
                 return (
                   <div key={req.id} className="px-5 py-4">
                     <div className="flex items-start gap-3">
@@ -189,7 +205,7 @@ export default function PTOManagement() {
                           <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
                             {s.label}
                           </span>
-                          {req.deduct_from_balance === false && (
+                          {req.deduct_from_balance === false && req.status !== 'denied' && (
                             <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
                               Not deducted
                             </span>
@@ -201,13 +217,33 @@ export default function PTOManagement() {
                         {req.requester_note && (
                           <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{req.requester_note}"</p>
                         )}
-                        {req.start_date >= today && (
-                          <ReviewRow requestId={req.id} ptoType={req.pto_type} onReview={handleReview} />
+                        {isFuture && (
+                          <ReviewRow requestId={req.id} ptoType={req.pto_type} currentStatus={req.status} onReview={handleReview} />
                         )}
                         {req.reviewer_note && (
                           <p className="text-xs text-[var(--text-secondary)] mt-1">
                             <span className="font-medium">Note:</span> {req.reviewer_note}
                           </p>
+                        )}
+
+                        {/* Delete confirmation */}
+                        {confirmDelete === req.id ? (
+                          <div className="mt-2 flex items-center gap-2">
+                            <p className="text-xs text-red-600 dark:text-red-400">Delete this request permanently?</p>
+                            <button onClick={() => handleDelete(req.id)}
+                              className="text-xs px-2 py-1 rounded-lg bg-red-500 text-white font-medium">
+                              Yes, delete
+                            </button>
+                            <button onClick={() => setConfirmDelete(null)}
+                              className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)]">
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmDelete(req.id)}
+                            className="mt-2 text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                            Delete request
+                          </button>
                         )}
                       </div>
                     </div>
@@ -219,13 +255,11 @@ export default function PTOManagement() {
         </div>
       </div>
 
-      {/* Right sidebar — staff scorecard */}
+      {/* Right sidebar */}
       <div className="w-64 flex-shrink-0 space-y-3 border-l border-[var(--border)] pl-5">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            {currentYear} Balances
-          </p>
-        </div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          {currentYear} Balances
+        </p>
 
         {loading ? (
           <div className="text-sm text-[var(--text-muted)]">Loading...</div>
@@ -239,33 +273,21 @@ export default function PTOManagement() {
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.full_name}</p>
                     {editingBalance === s.id ? (
                       <div className="flex items-center gap-1 mt-1">
-                        <input
-                          type="number"
-                          className="input text-xs py-0.5 px-1.5 w-16"
+                        <input type="number" className="input text-xs py-0.5 px-1.5 w-16"
                           value={balanceInput}
                           onChange={e => setBalanceInput(e.target.value)}
-                          placeholder="days"
-                          min="0"
-                          step="0.5"
-                          autoFocus
-                        />
+                          placeholder="days" min="0" step="0.5" autoFocus />
                         <button onClick={() => handleSaveBalance(s.id)}
-                          className="text-xs text-brand-green font-medium hover:underline">
-                          Save
-                        </button>
+                          className="text-xs text-brand-green font-medium hover:underline">Save</button>
                         <button onClick={() => { setEditingBalance(null); setBalanceInput('') }}
-                          className="text-xs text-[var(--text-muted)] hover:underline">
-                          Cancel
-                        </button>
+                          className="text-xs text-[var(--text-muted)] hover:underline">Cancel</button>
                       </div>
                     ) : (
                       <button
                         onClick={() => { setEditingBalance(s.id); setBalanceInput(s.total.toString()) }}
                         className="text-xs text-[var(--text-muted)] hover:text-brand-green transition-colors mt-0.5 flex items-center gap-1 group">
                         {s.hasBalance ? (
-                          <span>
-                            <span className="font-medium text-[var(--text-secondary)]">{s.total}</span> total
-                          </span>
+                          <span><span className="font-medium text-[var(--text-secondary)]">{s.total}</span> total</span>
                         ) : (
                           <span className="text-orange-500">Set balance</span>
                         )}
@@ -278,7 +300,6 @@ export default function PTOManagement() {
                     )}
                   </div>
                 </div>
-
                 {s.hasBalance && (
                   <div className="grid grid-cols-3 gap-1 text-center">
                     <div className="bg-[var(--bg)] rounded-lg py-1">
@@ -306,7 +327,7 @@ export default function PTOManagement() {
   )
 }
 
-function ReviewRow({ requestId, ptoType, onReview }) {
+function ReviewRow({ requestId, ptoType, currentStatus, onReview }) {
   const [note, setNote] = useState('')
   const [showNote, setShowNote] = useState(false)
   const [action, setAction] = useState(null)
@@ -344,8 +365,7 @@ function ReviewRow({ requestId, ptoType, onReview }) {
           </div>
         )}
         <div className="flex gap-2">
-          <button
-            onClick={handleConfirm}
+          <button onClick={handleConfirm}
             disabled={action === 'denied' && !note.trim()}
             className={`text-xs px-3 py-1 rounded-lg font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
             Confirm {action === 'approved' ? 'Approval' : 'Denial'}
@@ -360,15 +380,25 @@ function ReviewRow({ requestId, ptoType, onReview }) {
   }
 
   return (
-    <div className="flex gap-2 mt-2">
-      <button onClick={() => handleAction('approved')}
-        className="text-xs px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 font-medium hover:bg-green-100 transition-colors">
-        Approve
-      </button>
-      <button onClick={() => handleAction('denied')}
-        className="text-xs px-3 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 font-medium hover:bg-red-100 transition-colors">
-        Deny
-      </button>
+    <div className="flex gap-2 mt-2 flex-wrap">
+      {currentStatus !== 'approved' && (
+        <button onClick={() => handleAction('approved')}
+          className="text-xs px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 font-medium hover:bg-green-100 transition-colors">
+          Approve
+        </button>
+      )}
+      {currentStatus !== 'denied' && (
+        <button onClick={() => handleAction('denied')}
+          className="text-xs px-3 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 font-medium hover:bg-red-100 transition-colors">
+          Deny
+        </button>
+      )}
+      {currentStatus !== 'pending' && (
+        <button onClick={() => onReview(requestId, 'pending', '', true)}
+          className="text-xs px-3 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 font-medium hover:bg-yellow-100 transition-colors">
+          Reset to Pending
+        </button>
+      )}
     </div>
   )
 }
