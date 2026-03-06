@@ -20,11 +20,21 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function daysBetween(start, end) {
+function daysBetween(start, end, excludedWeekdays = [], holidays = []) {
+  if (!start || !end) return 0
   const s = new Date(start)
   const e = new Date(end)
-  const diff = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1
-  return diff
+  let count = 0
+  const current = new Date(s)
+  while (current <= e) {
+    const dayOfWeek = current.getDay()
+    const dateStr = current.toISOString().split('T')[0]
+    const isExcludedWeekday = excludedWeekdays.includes(dayOfWeek)
+    const isHoliday = holidays.includes(dateStr)
+    if (!isExcludedWeekday && !isHoliday) count++
+    current.setDate(current.getDate() + 1)
+  }
+  return count
 }
 
 export default function PTO() {
@@ -41,6 +51,8 @@ export default function PTO() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [activeTab, setActiveTab] = useState('mine')
+  const [excludedWeekdays, setExcludedWeekdays] = useState([5, 6])
+  const [holidays, setHolidays] = useState([])
 
   const [form, setForm] = useState({
     pto_type: 'vacation',
@@ -59,7 +71,7 @@ export default function PTO() {
     setLoading(true)
     const currentYear = new Date().getFullYear()
 
-    const [reqRes, balRes] = await Promise.all([
+    const [reqRes, balRes, settingsRes, holidaysRes] = await Promise.all([
       supabase.from('pto_requests')
         .select('*')
         .eq('user_id', user.id)
@@ -69,10 +81,26 @@ export default function PTO() {
         .eq('user_id', user.id)
         .eq('year', currentYear)
         .single(),
+      supabase.from('org_settings')
+        .select('*')
+        .eq('key', 'pto_excluded_weekdays')
+        .single(),
+      supabase.from('calendar_events')
+        .select('start_date')
+        .eq('event_type', 'holiday')
+        .gte('start_date', `${currentYear}-01-01`)
+        .lte('start_date', `${currentYear}-12-31`),
     ])
 
     setRequests(reqRes.data || [])
     setBalance(balRes.data || null)
+
+    if (settingsRes.data) {
+      setExcludedWeekdays(settingsRes.data.value)
+    }
+    if (holidaysRes.data) {
+      setHolidays(holidaysRes.data.map(h => h.start_date))
+    }
 
     if (canReview) {
       const { data: allReqs } = await supabase
@@ -85,7 +113,6 @@ export default function PTO() {
     setLoading(false)
   }
 
-  // Calculate balance stats
   const today = new Date().toISOString().split('T')[0]
   const totalDays = balance?.total_days || 0
 
@@ -112,7 +139,7 @@ export default function PTO() {
     setSubmitting(true)
     setError(null)
 
-    const days = daysBetween(form.start_date, form.end_date)
+    const days = daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays)
 
     const { error: insertError } = await supabase
       .from('pto_requests')
@@ -217,7 +244,9 @@ export default function PTO() {
             </div>
             {form.start_date && form.end_date && form.end_date >= form.start_date && (
               <p className="text-sm text-[var(--text-muted)]">
-                That's <strong className="text-[var(--text-primary)]">{daysBetween(form.start_date, form.end_date)} day{daysBetween(form.start_date, form.end_date) !== 1 ? 's' : ''}</strong>
+                That's <strong className="text-[var(--text-primary)]">
+                  {daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays)} day{daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays) !== 1 ? 's' : ''}
+                </strong> of PTO
               </p>
             )}
             <div>
@@ -306,7 +335,7 @@ export default function PTO() {
         </div>
       )}
 
-      {/* Team requests — admins/leaders only */}
+      {/* Team requests */}
       {activeTab === 'team' && canReview && (
         <div className="card overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--border)]">
@@ -390,7 +419,7 @@ function ReviewRow({ requestId, onReview }) {
       <div className="mt-2 space-y-2">
         <input className="input text-xs" value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder={`Add a note (optional)...`} />
+          placeholder="Add a note (optional)..." />
         <div className="flex gap-2">
           <button onClick={handleConfirm}
             className={`text-xs px-3 py-1 rounded-lg font-medium text-white ${action === 'approved' ? 'bg-brand-green' : 'bg-red-500'}`}>
