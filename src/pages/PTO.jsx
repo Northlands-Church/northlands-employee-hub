@@ -107,7 +107,7 @@ export default function PTO() {
     if (canReview) {
       const { data: allReqs, error: allReqsError } = await supabase
         .from('pto_requests')
-        .select(`*, users(full_name, avatar_url)`)
+        .select(`*, users!pto_requests_user_id_fkey(full_name, avatar_url)`)
         .order('created_at', { ascending: false })
       console.log('allReqs:', allReqs, 'error:', allReqsError)
       setAllRequests(allReqs || [])
