@@ -143,53 +143,36 @@ export default function PTO() {
     const days = daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays)
 
     if (editingRequest) {
-      const { error: updateError } = await supabase
-        .from('pto_requests')
-        .update({
-          start_date: form.start_date,
-          end_date: form.end_date,
-          days_requested: days,
-          pto_type: form.pto_type,
-          requester_note: form.requester_note || null,
-          status: 'pending',
-          reviewed_by: null,
-          reviewed_at: null,
-          reviewer_note: null,
-        })
-        .eq('id', editingRequest.id)
+  const datesChanged = form.start_date !== editingRequest.start_date || form.end_date !== editingRequest.end_date
+  const typeChanged = form.pto_type !== editingRequest.pto_type
+  const needsReapproval = datesChanged || typeChanged
 
-      if (updateError) {
-        setError(updateError.message)
-      } else {
-        setSuccess('Request updated and resubmitted for approval.')
-        closeForm()
-        fetchData()
-        setTimeout(() => setSuccess(null), 3000)
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from('pto_requests')
-        .insert({
-          user_id: user.id,
-          start_date: form.start_date,
-          end_date: form.end_date,
-          days_requested: days,
-          pto_type: form.pto_type,
-          requester_note: form.requester_note || null,
-          status: 'pending',
-        })
+  const { error: updateError } = await supabase
+    .from('pto_requests')
+    .update({
+      start_date: form.start_date,
+      end_date: form.end_date,
+      days_requested: days,
+      pto_type: form.pto_type,
+      requester_note: form.requester_note || null,
+      ...(needsReapproval && {
+        status: 'pending',
+        reviewed_by: null,
+        reviewed_at: null,
+        reviewer_note: null,
+      }),
+    })
+    .eq('id', editingRequest.id)
 
-      if (insertError) {
-        setError(insertError.message)
-      } else {
-        setSuccess('Request submitted successfully!')
-        closeForm()
-        fetchData()
-        setTimeout(() => setSuccess(null), 3000)
-      }
-    }
-    setSubmitting(false)
+  if (updateError) {
+    setError(updateError.message)
+  } else {
+    setSuccess(needsReapproval ? 'Request updated and resubmitted for approval.' : 'Request updated.')
+    closeForm()
+    fetchData()
+    setTimeout(() => setSuccess(null), 3000)
   }
+}
 
   async function handleDelete(requestId) {
     const { error } = await supabase
