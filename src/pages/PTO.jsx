@@ -15,9 +15,19 @@ const STATUS_STYLES = {
   denied: { label: 'Denied', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', border: 'border-red-200 dark:border-red-800' },
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+function formatDateRange(start, end) {
+  const s = new Date(start)
+  const e = new Date(end)
+  const sameYear = s.getFullYear() === e.getFullYear()
+  const sameMonth = sameYear && s.getMonth() === e.getMonth()
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  if (sameMonth) {
+    return `${monthNames[s.getMonth()]} ${s.getDate()} – ${e.getDate()}, ${s.getFullYear()}`
+  } else if (sameYear) {
+    return `${monthNames[s.getMonth()]} ${s.getDate()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${s.getFullYear()}`
+  } else {
+    return `${monthNames[s.getMonth()]} ${s.getDate()}, ${s.getFullYear()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`
+  }
 }
 
 function daysBetween(start, end, excludedWeekdays = [], holidays = []) {
@@ -143,36 +153,59 @@ export default function PTO() {
     const days = daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays)
 
     if (editingRequest) {
-  const datesChanged = form.start_date !== editingRequest.start_date || form.end_date !== editingRequest.end_date
-  const typeChanged = form.pto_type !== editingRequest.pto_type
-  const needsReapproval = datesChanged || typeChanged
+      const datesChanged = form.start_date !== editingRequest.start_date || form.end_date !== editingRequest.end_date
+      const typeChanged = form.pto_type !== editingRequest.pto_type
+      const needsReapproval = datesChanged || typeChanged
 
-  const { error: updateError } = await supabase
-    .from('pto_requests')
-    .update({
-      start_date: form.start_date,
-      end_date: form.end_date,
-      days_requested: days,
-      pto_type: form.pto_type,
-      requester_note: form.requester_note || null,
-      ...(needsReapproval && {
-        status: 'pending',
-        reviewed_by: null,
-        reviewed_at: null,
-        reviewer_note: null,
-      }),
-    })
-    .eq('id', editingRequest.id)
+      const { error: updateError } = await supabase
+        .from('pto_requests')
+        .update({
+          start_date: form.start_date,
+          end_date: form.end_date,
+          days_requested: days,
+          pto_type: form.pto_type,
+          requester_note: form.requester_note || null,
+          ...(needsReapproval && {
+            status: 'pending',
+            reviewed_by: null,
+            reviewed_at: null,
+            reviewer_note: null,
+          }),
+        })
+        .eq('id', editingRequest.id)
 
-  if (updateError) {
-    setError(updateError.message)
-  } else {
-    setSuccess(needsReapproval ? 'Request updated and resubmitted for approval.' : 'Request updated.')
-    closeForm()
-    fetchData()
-    setTimeout(() => setSuccess(null), 3000)
+      if (updateError) {
+        setError(updateError.message)
+      } else {
+        setSuccess(needsReapproval ? 'Request updated and resubmitted for approval.' : 'Request updated.')
+        closeForm()
+        fetchData()
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('pto_requests')
+        .insert({
+          user_id: user.id,
+          start_date: form.start_date,
+          end_date: form.end_date,
+          days_requested: days,
+          pto_type: form.pto_type,
+          requester_note: form.requester_note || null,
+          status: 'pending',
+        })
+
+      if (insertError) {
+        setError(insertError.message)
+      } else {
+        setSuccess('Request submitted successfully!')
+        closeForm()
+        fetchData()
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    }
+    setSubmitting(false)
   }
-}
 
   async function handleDelete(requestId) {
     const { error } = await supabase
@@ -189,6 +222,11 @@ export default function PTO() {
   }
 
   const daysCount = daysBetween(form.start_date, form.end_date, excludedWeekdays, holidays)
+  const needsReapproval = editingRequest && (
+    form.start_date !== editingRequest.start_date ||
+    form.end_date !== editingRequest.end_date ||
+    form.pto_type !== editingRequest.pto_type
+  )
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -272,10 +310,10 @@ export default function PTO() {
                 onChange={e => update('requester_note', e.target.value)}
                 placeholder="e.g. California with family, Men's retreat..." />
             </div>
-            {editingRequest && (
+            {needsReapproval && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
                 <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                  ⚠️ Editing this request will reset it to pending and require re-approval.
+                  ⚠️ Changing dates or type will reset this request to pending and require re-approval.
                 </p>
               </div>
             )}
@@ -288,7 +326,7 @@ export default function PTO() {
               <button onClick={closeForm} className="btn-secondary">Cancel</button>
               <button onClick={handleSubmit} disabled={submitting}
                 className="btn-primary disabled:opacity-50">
-                {submitting ? 'Submitting...' : editingRequest ? 'Resubmit Request' : 'Submit Request'}
+                {submitting ? 'Submitting...' : editingRequest ? 'Save Changes' : 'Submit Request'}
               </button>
             </div>
           </div>
@@ -307,68 +345,52 @@ export default function PTO() {
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {requests.map(req => {
-          const s = STATUS_STYLES[req.status] || STATUS_STYLES.pending
-          const type = PTO_TYPES.find(t => t.value === req.pto_type)
-        
-          const formatDateRange = (start, end) => {
-            const s = new Date(start)
-            const e = new Date(end)
-            const sameYear = s.getFullYear() === e.getFullYear()
-            const sameMonth = sameYear && s.getMonth() === e.getMonth()
-            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-            if (sameMonth) {
-              return `${monthNames[s.getMonth()]} ${s.getDate()} – ${e.getDate()}, ${s.getFullYear()}`
-            } else if (sameYear) {
-              return `${monthNames[s.getMonth()]} ${s.getDate()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${s.getFullYear()}`
-            } else {
-              return `${monthNames[s.getMonth()]} ${s.getDate()}, ${s.getFullYear()} – ${monthNames[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`
-            }
-          }
-        
-          const isDenied = req.status === 'denied'
-        
-          return (
-            <div key={req.id} className={`px-5 py-4 ${isDenied ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
-                      {s.label}
-                    </span>
-                    {req.deduct_from_balance === false && !isDenied && (
-                      <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
-                        Not deducted
-                      </span>
+              const s = STATUS_STYLES[req.status] || STATUS_STYLES.pending
+              const type = PTO_TYPES.find(t => t.value === req.pto_type)
+              const isDenied = req.status === 'denied'
+              const isFuture = req.start_date >= today
+              return (
+                <div key={req.id} className={`px-5 py-4 ${isDenied ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text} ${s.border}`}>
+                          {s.label}
+                        </span>
+                        {req.deduct_from_balance === false && !isDenied && (
+                          <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+                            Not deducted
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-base font-semibold text-[var(--text-primary)] leading-snug">
+                        {req.requester_note || formatDateRange(req.start_date, req.end_date)}
+                      </p>
+                      <p className="text-sm font-medium text-[var(--text-secondary)] mt-0.5">
+                        {formatDateRange(req.start_date, req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
+                      </p>
+                      {req.reviewer_note && (
+                        <p className="text-xs text-[var(--text-secondary)] mt-1">
+                          <span className="font-medium">Note:</span> {req.reviewer_note}
+                        </p>
+                      )}
+                    </div>
+                    {isFuture && (req.status === 'pending' || req.status === 'approved') && (
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => openEdit(req)}
+                          className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(req.id)}
+                          className="text-xs px-2 py-1 rounded-lg border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <p className="text-base font-semibold text-[var(--text-primary)] leading-snug">
-                    {req.requester_note || formatDateRange(req.start_date, req.end_date)}
-                  </p>
-                  <p className="text-sm font-medium text-[var(--text-secondary)] mt-0.5">
-                    {formatDateRange(req.start_date, req.end_date)} · {req.days_requested} day{req.days_requested !== 1 ? 's' : ''} · {type?.label || req.pto_type}
-                  </p>
-                  {req.reviewer_note && (
-                    <p className="text-xs text-[var(--text-secondary)] mt-1">
-                      <span className="font-medium">Note:</span> {req.reviewer_note}
-                    </p>
-                  )}
                 </div>
-                {(req.status === 'pending' || req.status === 'approved') && req.start_date >= today && (
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => openEdit(req)}
-                      className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(req.id)}
-                      className="text-xs px-2 py-1 rounded-lg border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
+              )
+            })}
           </div>
         )}
       </div>
